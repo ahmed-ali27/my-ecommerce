@@ -5,7 +5,8 @@ import { Star, Heart, ShoppingCart, Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation"; // 👈 أضفنا useRouter هنا
+import Cookies from "js-cookie"; // 👈 أضفنا js-cookie لقراءة التوكن
 
 // 1️⃣ استيراد الـ Redux Hooks والـ Actions
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
@@ -35,6 +36,8 @@ type ProductsApiResponse = {
 function ShopContent() {
   const [allProducts, setAllProducts] = useState<productsDetails[]>();
 
+  const router = useRouter(); // 👈 تفعيل الـ Router
+
   // 2️⃣ إعداد الـ Redux
   const dispatch = useAppDispatch();
   const { wishlistIds } = useAppSelector((state) => state.wishlist);
@@ -57,7 +60,6 @@ function ShopContent() {
       endpoint = `/products?brand=${brandId}`;
     }
 
-    // يعاد الجلب فقط عند تغيّر مرشّح التصنيف أو العلامة التجارية في الرابط
     api
       .get<ProductsApiResponse>(endpoint)
       .then((res) => {
@@ -70,20 +72,36 @@ function ShopContent() {
 
   // فلترة المنتجات بناءً على كلمة البحث
   const filteredProducts = allProducts?.filter((pro) =>
-    pro.title.toLowerCase().includes(searchQuery.toLowerCase().trim()),
+    pro.title.toLowerCase().includes(searchQuery.toLowerCase().trim())
   );
 
-  // 🛒 دالة إضافة المنتج للسلة
+  // 🛒 دالة إضافة المنتج للسلة مع حماية الـ Auth
   const handleAddToCart = async (e: React.MouseEvent, productId: string) => {
-    e.preventDefault(); // منع للانتقال لصفحة التفاصيل عند الضغط
+    e.preventDefault();
+
+    // 🔴 فحص هل المستخدم مسجل دخول أم لا
+    const token = Cookies.get("userToken");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
     setLoadingCartId(productId);
     await dispatch(addToCart(productId));
     setLoadingCartId(null);
   };
 
-  // ❤️ دالة إضافة/حذف المنتج من المفضلة
+  // ❤️ دالة إضافة/حذف المنتج من المفضلة مع حماية الـ Auth
   const handleWishlistToggle = async (e: React.MouseEvent, productId: string) => {
-    e.preventDefault(); // منع للانتقال لصفحة التفاصيل عند الضغط
+    e.preventDefault();
+
+    // 🔴 فحص هل المستخدم مسجل دخول أم لا
+    const token = Cookies.get("userToken");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
     setLoadingWishId(productId);
 
     if (wishlistIds?.includes(productId)) {
