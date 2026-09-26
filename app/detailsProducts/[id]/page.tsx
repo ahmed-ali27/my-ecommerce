@@ -1,4 +1,3 @@
-
 "use client";
 import api from "@/Api/api";
 import Discount from "@/app/_components/discount/page";
@@ -12,13 +11,19 @@ import {
   ShieldCheck,
   Truck,
   RefreshCw,
+  Loader2, // 👈 استيراد أيقونة التحميل
 } from "lucide-react";
 
 import Image from "next/image";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation"; // 👈 استيراد useRouter
 import { useEffect, useState } from "react";
-import toast from "react-hot-toast";
+import Cookies from "js-cookie"; // 👈 استيراد js-cookie
+
+// 1️⃣ استيراد الـ Redux Hooks والـ Actions
+import { useAppDispatch, useAppSelector } from "@/lib/hooks";
+import { addToCart } from "@/lib/cartSlice";
+import { addToWishlist, removeFromWishlist } from "@/lib/wishlistSlice";
 
 type ProductReview = {
   rating: number;
@@ -44,11 +49,19 @@ type ProductDetailsData = {
 export default function DetailsProducts() {
   const params = useParams();
   const id = params.id;
+  const router = useRouter(); // 👈 تفعيل useRouter
+
+  // 2️⃣ إعداد Redux
+  const dispatch = useAppDispatch();
+  const { wishlistIds } = useAppSelector((state) => state.wishlist);
 
   const [productDetails, setProductDetails] = useState<ProductDetailsData | null>(null);
   const [handelNumber, setHandelNumber] = useState<number>(1);
-  // state لتحديد الصورة المعروضة حالياً
   const [selectedImage, setSelectedImage] = useState<string>("");
+
+  // حالات التحميل لكل زر
+  const [loadingCart, setLoadingCart] = useState<boolean>(false);
+  const [loadingWishlist, setLoadingWishlist] = useState<boolean>(false);
 
   function handelNumButton(amount: number) {
     setHandelNumber((prev) => Math.max(1, prev + amount));
@@ -57,17 +70,54 @@ export default function DetailsProducts() {
   useEffect(() => {
     if (!id) return;
 
-    // ربط جلب التفاصيل بمعرّف المسار يمنع التحذير ويحافظ على تحديث المنتج عند تغيّره
     api
       .get<{ data: ProductDetailsData }>(`/products/${id}`)
       .then((res) => {
         setProductDetails(res.data.data);
-        console.log(res.data.data);
       })
       .catch((err: unknown) => {
         console.log(err);
       });
   }, [id]);
+
+  // فحص هل المنتج موجود في المفضلة حالياً
+  const isInWishlist = productDetails ? wishlistIds?.includes(productDetails._id) : false;
+
+  // 🛒 دالة إضافة المنتج للسلة مع حماية الـ Auth
+  const handleAddToCart = async () => {
+    if (!productDetails) return;
+
+    const token = Cookies.get("userToken");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    setLoadingCart(true);
+    await dispatch(addToCart(productDetails._id));
+    setLoadingCart(false);
+  };
+
+  // ❤️ دالة إضافة/حذف المنتج من المفضلة مع حماية الـ Auth
+  const handleWishlistToggle = async () => {
+    if (!productDetails) return;
+
+    const token = Cookies.get("userToken");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    setLoadingWishlist(true);
+
+    if (isInWishlist) {
+      await dispatch(removeFromWishlist(productDetails._id));
+    } else {
+      await dispatch(addToWishlist(productDetails._id));
+    }
+
+    setLoadingWishlist(false);
+  };
 
   // الصورة الحالية (إما المحددة أو الغلاف الافتراضي)
   const currentImage = selectedImage || productDetails?.imageCover;
@@ -113,7 +163,7 @@ export default function DetailsProducts() {
                     <button
                       key={index}
                       onClick={() => setSelectedImage(img)}
-                      className={`h-20 sm:h-24 rounded-xl border-2 overflow-hidden bg-[#EFECE6] relative p-1 transition-all ${
+                      className={`h-20 sm:h-24 rounded-xl border-2 overflow-hidden bg-[#EFECE6] relative p-1 transition-all cursor-pointer ${
                         currentImage === img
                           ? "border-[#2D4735] scale-105 shadow-sm"
                           : "border-transparent opacity-70 hover:opacity-100"
@@ -177,7 +227,7 @@ export default function DetailsProducts() {
                 </p>
 
                 {/* المميزات السريعة (Badges) */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-2 text-xs text-gray-700"> 
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-2 text-xs text-gray-700">
                   <div className="flex items-center gap-2 p-2.5 bg-white rounded-xl border border-gray-200/80">
                     <Truck className="w-4 h-4 text-[#2D4735]" />
                     <span>Free Shipping</span>
@@ -197,8 +247,8 @@ export default function DetailsProducts() {
                     {/* عداد الكمية (- 1 +) */}
                     <div className="flex items-center justify-between border border-gray-300 rounded-xl px-4 py-2 bg-white w-32 shadow-sm">
                       <button
-                        onClick={() =>{ handelNumButton(-1);toast.error("Product delete")}}
-                        className="text-gray-600 hover:text-black transition"
+                        onClick={() => handelNumButton(-1)}
+                        className="text-gray-600 hover:text-black transition cursor-pointer"
                       >
                         <Minus className="w-4 h-4" />
                       </button>
@@ -206,22 +256,47 @@ export default function DetailsProducts() {
                         {handelNumber}
                       </span>
                       <button
-                        onClick={() => {handelNumButton(1);toast.success("Product added.")}}
-                        className="text-gray-600 hover:text-black transition"
+                        onClick={() => handelNumButton(1)}
+                        className="text-gray-600 hover:text-black transition cursor-pointer"
                       >
                         <Plus className="w-4 h-4" />
                       </button>
                     </div>
 
-                    {/* زر أضف للسلة */}
-                    <button className="flex-1 min-w-45 flex items-center justify-center gap-2 bg-[#2D4735] hover:bg-[#213527] text-white font-medium py-3 px-6 rounded-xl transition-all shadow-sm active:scale-[0.98]">
-                      <ShoppingCart className="w-4 h-4" />
-                      Add to Cart
+                    {/* 🛒 زر أضف للسلة */}
+                    <button
+                      onClick={handleAddToCart}
+                      disabled={loadingCart}
+                      className="flex-1 min-w-45 flex items-center justify-center gap-2 bg-[#2D4735] hover:bg-[#213527] text-white font-medium py-3 px-6 rounded-xl transition-all shadow-sm active:scale-[0.98] disabled:opacity-70 cursor-pointer"
+                    >
+                      {loadingCart ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <>
+                          <ShoppingCart className="w-4 h-4" />
+                          <span>Add to Cart</span>
+                        </>
+                      )}
                     </button>
 
-                    {/* زر المفضلة */}
-                    <button className="p-3 border border-gray-300 bg-white hover:bg-gray-50 text-gray-600 hover:text-red-500 rounded-xl transition shadow-sm">
-                      <Heart className="w-5 h-5" />
+                    {/* ❤️ زر المفضلة */}
+                    <button
+                      onClick={handleWishlistToggle}
+                      disabled={loadingWishlist}
+                      title={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
+                      className="p-3 border border-gray-300 bg-white hover:bg-gray-50 text-gray-600 rounded-xl transition shadow-sm cursor-pointer disabled:opacity-70"
+                    >
+                      {loadingWishlist ? (
+                        <Loader2 className="w-5 h-5 animate-spin text-[#2D4735]" />
+                      ) : (
+                        <Heart
+                          className={`w-5 h-5 transition-all duration-300 ${
+                            isInWishlist
+                              ? "fill-red-500 text-red-500"
+                              : "text-gray-600 hover:text-red-500"
+                          }`}
+                        />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -236,17 +311,16 @@ export default function DetailsProducts() {
 
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 {/* كارت ملخص التقييمات الأيسر */}
-                <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm flex items-center  h-25">
+                <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm flex items-center gap-4 h-25">
                   <div className="text-4xl font-extrabold text-gray-900 mb-1">
                     {productDetails?.ratingsAverage || "0.0"}
                   </div>
-                  <div className="mb-2 ">
+                  <div>
                     <StarRating rating={productDetails?.ratingsAverage} />
+                    <p className="text-xs text-gray-400 mt-1">
+                      ({productDetails?.ratingsQuantity || 0} reviews)
+                    </p>
                   </div>
-                  <p className="text-xs text-gray-400 mb-4">
-                    ({productDetails?.ratingsQuantity || 0} reviews)
-                  </p>
-
                 </div>
 
                 {/* قائمة المراجعات */}
