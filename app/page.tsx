@@ -6,7 +6,6 @@ import { ArrowRight } from "lucide-react";
 import api from "../Api/api";
 import { useEffect, useState } from "react";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
-import { brands } from "@fortawesome/fontawesome-svg-core/import.macro";
 type categories = {
   _id: string;
   image: string;

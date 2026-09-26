@@ -1,8 +1,10 @@
 import { Star, StarHalf } from "lucide-react";
-type propsStar = {
-  rating: number;
+type StarRatingProps = {
+  rating: number | undefined;
 };
-export default function StarRating({ rating }): propsStar {
+
+// عرض النجوم فارغة عند غياب التقييم قبل وصول بيانات المنتج
+export default function StarRating({ rating = 0 }: StarRatingProps) {
   const stars = [];
   for (let i = 1; i <= 5; i++) {
     if (i <= rating) {

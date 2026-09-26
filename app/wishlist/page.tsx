@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Heart, ShoppingCart, Trash2, ArrowRight, Loader2, Star } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
-import { getWishlist, removeFromWishlist } from "@/lib/wishlistSlice";
+import { getWishlist, removeFromWishlist, type WishlistProduct } from "@/lib/wishlistSlice";
 import { addToCart } from "@/lib/cartSlice";
 
 export default function WishlistPage() {
@@ -80,14 +80,14 @@ export default function WishlistPage() {
         ) : (
           /* 🛍️ شبكة عرض منتجات المفضلة */
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 justify-items-center">
-            {wishlistData.map((pro: any) => (
+            {wishlistData.map((pro: WishlistProduct) => (
               <div
                 key={pro._id || pro.id}
                 className="bg-[#E0DED4] w-full max-w-[240px] rounded-2xl hover:shadow-xl/30 transition duration-200 ease-in p-3 flex flex-col justify-between relative group"
               >
                 {/* زر إزالة المنتجات من المفضلة */}
                 <button
-                  onClick={() => handleRemove(pro._id || pro.id)}
+                  onClick={() => handleRemove(pro._id || pro.id!)}
                   disabled={loadingRemoveId === (pro._id || pro.id)}
                   className="absolute top-4 right-4 z-10 p-2 bg-white/80 backdrop-blur-sm rounded-full hover:bg-red-50 hover:text-red-600 transition cursor-pointer shadow-sm"
                   title="Remove from wishlist"
@@ -129,7 +129,7 @@ export default function WishlistPage() {
 
                 {/* زر إضافة المنتج للسلة */}
                 <button
-                  onClick={() => handleAddToCart(pro._id || pro.id)}
+                  onClick={() => handleAddToCart(pro._id || pro.id!)}
                   disabled={loadingCartId === (pro._id || pro.id)}
                   className="w-full mt-2 bg-[#46604e] hover:bg-[#2d4735] text-white py-2 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition duration-200 cursor-pointer disabled:opacity-70"
                 >

@@ -20,38 +20,53 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
+type ProductReview = {
+  rating: number;
+  review?: string;
+  user?: { name?: string };
+};
+
+type ProductDetailsData = {
+  _id: string;
+  title: string;
+  imageCover: string;
+  images?: string[];
+  price: number;
+  priceAfterDiscount?: number | null;
+  description?: string;
+  ratingsAverage?: number;
+  ratingsQuantity?: number;
+  category?: { name?: string };
+  brand?: { name?: string };
+  reviews?: ProductReview[];
+};
 
 export default function DetailsProducts() {
   const params = useParams();
   const id = params.id;
 
-  const [productDetails, setProductDetails] = useState<any>(null);
+  const [productDetails, setProductDetails] = useState<ProductDetailsData | null>(null);
   const [handelNumber, setHandelNumber] = useState<number>(1);
   // state لتحديد الصورة المعروضة حالياً
   const [selectedImage, setSelectedImage] = useState<string>("");
 
-  function getSpecificProducts() {
-    api
-      .get(`/products/${id}`)
-      .then((res) => {
-        setProductDetails(res.data.data);
-        console.log(res.data.data);
-        
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  }
-
   function handelNumButton(amount: number) {
     setHandelNumber((prev) => Math.max(1, prev + amount));
-   
   }
 
   useEffect(() => {
-    if (id) {
-      getSpecificProducts();
-    }
+    if (!id) return;
+
+    // ربط جلب التفاصيل بمعرّف المسار يمنع التحذير ويحافظ على تحديث المنتج عند تغيّره
+    api
+      .get<{ data: ProductDetailsData }>(`/products/${id}`)
+      .then((res) => {
+        setProductDetails(res.data.data);
+        console.log(res.data.data);
+      })
+      .catch((err: unknown) => {
+        console.log(err);
+      });
   }, [id]);
 
   // الصورة الحالية (إما المحددة أو الغلاف الافتراضي)
@@ -84,7 +99,7 @@ export default function DetailsProducts() {
                 {/* الصورة الرئيسية */}
                 <div className="w-full h-87.5 sm:h-112.5 bg-[#EFECE6] rounded-2xl overflow-hidden flex items-center justify-center p-6 border border-gray-200/50 relative shadow-sm">
                   <Image
-                    src={currentImage}
+                    src={currentImage || productDetails.imageCover}
                     alt={productDetails?.title || "Product"}
                     fill
                     className="object-contain p-4 mix-blend-multiply transition-all duration-300"
@@ -152,7 +167,7 @@ export default function DetailsProducts() {
                   </p>
                   <Discount
                     price={productDetails?.price}
-                    priceAfterDiscount={productDetails?.priceAfterDiscount}
+                    priceAfterDiscount={productDetails?.priceAfterDiscount ?? 0}
                   />
                 </div>
 
@@ -236,10 +251,10 @@ export default function DetailsProducts() {
 
                 {/* قائمة المراجعات */}
                 <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {productDetails?.reviews?.length > 0 ? (
+                  {(productDetails?.reviews?.length ?? 0) > 0 ? (
                     productDetails.reviews
-                      .slice(0, 10)
-                      .map((rev: any, index: number) => (
+                      ?.slice(0, 10)
+                      .map((rev, index: number) => (
                         <div
                           key={index}
                           className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col justify-between gap-3"

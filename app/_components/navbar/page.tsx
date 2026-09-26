@@ -31,6 +31,8 @@ function Navbar() {
   // 🔄 الفحص التلقائي لحالة تسجيل الدخول عند تحميل الصفحة أو التنقل بين الصفحات
   useEffect(() => {
     const token = Cookies.get("userToken");
+    // يتغير الرمز خارج React، لذلك نزامن الحالة والعدادات عند كل انتقال
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoggedIn(!!token);
     dispatch(getCart());
     dispatch(getWishlist());

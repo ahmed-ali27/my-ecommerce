@@ -7,6 +7,15 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
+import axios from "axios";
+
+type SignupValues = {
+  name: string;
+  email: string;
+  password: string;
+  rePassword: string;
+  phone: string;
+};
 
 export default function Signup() {
   const router = useRouter();
@@ -37,16 +46,20 @@ export default function Signup() {
   });
 
   // 2️⃣ إرسال البيانات للـ API
-  const handleSignup = async (values: typeof formik.initialValues) => {
+  const handleSignup = async (values: SignupValues) => {
     setLoading(true);
     setErrorMsg("");
     try {
+      // إرسال الحقول التي يعتمد عليها مسار إنشاء الحساب كما هي
       const response = await api.post("/auth/signup", values);
       if (response.data.message === "success") {
         router.push("/login");
       }
-    } catch (err: any) {
-      setErrorMsg(err.response?.data?.message || "An error occurred during signup");
+    } catch (err: unknown) {
+      const message = axios.isAxiosError<{ message?: string }>(err)
+        ? err.response?.data?.message
+        : undefined;
+      setErrorMsg(message || "An error occurred during signup");
     } finally {
       setLoading(false);
     }

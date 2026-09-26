@@ -20,7 +20,7 @@ export default function CartPage() {
   }, [dispatch]);
 
   // 🔄 تعديل كمية المنتج
-  const handleUpdateCount = async (productId: string, currentCount: number, newCount: number) => {
+  const handleUpdateCount = async (productId: string, newCount: number) => {
     if (newCount < 1) return;
     setUpdatingItemId(productId);
     await dispatch(updateCartQuantity({ productId, count: newCount }));
@@ -38,6 +38,7 @@ export default function CartPage() {
   const handleClearCart = async () => {
     setClearingCart(true);
     try {
+      // אחרי מחיקת הסל בשרת, מביאים את מצבו מחדש כדי לסנכרן את Redux
       await api.delete("/cart");
       dispatch(getCart());
     } catch (err) {
@@ -92,7 +93,7 @@ export default function CartPage() {
             </div>
             <h2 className="text-xl font-bold text-[#2D4735] mb-2">Your Cart is Empty</h2>
             <p className="text-gray-500 text-sm mb-6">
-              Looks like you haven't added anything to your cart yet.
+              Looks like you haven&apos;t added anything to your cart yet.
             </p>
             <Link
               href="/shop"
@@ -108,7 +109,7 @@ export default function CartPage() {
             
             {/* قائمة العناصر */}
             <div className="lg:col-span-2 space-y-4">
-              {products.map((item: any) => (
+              {products.map((item) => (
                 <div
                   key={item._id || item.product._id}
                   className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E0DED4] shadow-sm flex flex-col sm:flex-row items-center gap-5 justify-between"
@@ -140,7 +141,7 @@ export default function CartPage() {
                     <div className="flex items-center border border-[#E0DED4] rounded-xl bg-[#F9F9F6]">
                       <button
                         onClick={() =>
-                          handleUpdateCount(item.product._id, item.count, item.count - 1)
+                          handleUpdateCount(item.product._id, item.count - 1)
                         }
                         disabled={updatingItemId === item.product._id || item.count <= 1}
                         className="p-2 hover:text-[#2D4735] disabled:opacity-30 transition"
@@ -156,7 +157,7 @@ export default function CartPage() {
                       </span>
                       <button
                         onClick={() =>
-                          handleUpdateCount(item.product._id, item.count, item.count + 1)
+                          handleUpdateCount(item.product._id, item.count + 1)
                         }
                         disabled={updatingItemId === item.product._id}
                         className="p-2 hover:text-[#2D4735] disabled:opacity-30 transition"

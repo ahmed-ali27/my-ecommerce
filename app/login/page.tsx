@@ -8,6 +8,12 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
+import axios from "axios";
+
+type LoginValues = {
+  email: string;
+  password: string;
+};
 
 export default function Login() {
   const router = useRouter();
@@ -23,20 +29,23 @@ export default function Login() {
   });
 
   // 2️⃣ إرسال البيانات وتخزين الـ Token في הـ Cookie
-  const handleLogin = async (values: typeof formik.initialValues) => {
+  const handleLogin = async (values: LoginValues) => {
     setLoading(true);
     setErrorMsg("");
     try {
       const response = await api.post("/auth/signin", values);
       console.log("LOGIN RESPONSE:", response.data); // 👈 طباعة البيانات للاختبار
       if (response.data.message === "success") {
-        // حفظ الـ Token لمدة 7 أيام في הـ Cookie
+        // حفظ الرمز سبعة أيام لأن اعتراض الطلبات يقرأه لإضافة ترويسة المصادقة
         Cookies.set("userToken", response.data.token, { expires: 7 });
         console.log("SAVED TOKEN IS:", Cookies.get("userToken"));
         router.push("/shop");
       }
-    } catch (err: any) {
-      setErrorMsg(err.response?.data?.message || "Invalid email or password");
+    } catch (err: unknown) {
+      const message = axios.isAxiosError<{ message?: string }>(err)
+        ? err.response?.data?.message
+        : undefined;
+      setErrorMsg(message || "Invalid email or password");
     } finally {
       setLoading(false);
     }
@@ -119,7 +128,7 @@ export default function Login() {
         </form>
 
         <p className="text-center text-sm text-gray-600 mt-6">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link href="/signUp" className="text-[#2D4735] font-bold hover:underline">
             Sign Up
           </Link>

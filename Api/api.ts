@@ -11,6 +11,7 @@ api.interceptors.request.use(
     const token = Cookies.get("userToken");
 
     if (token) {
+      // يقرأ الـ API الرمز من ترويسة token، لذا نضيفه للطلبات المحمية فقط عند توفره
       // الـ API الخاص بالمتجر يقرأ الـ Token من هيدر باسم "token"
       config.headers.token = token;
     }

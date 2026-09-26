@@ -16,6 +16,7 @@ import Link from "next/link";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { getCart } from "@/lib/cartSlice";
 import api from "@/Api/api";
+import axios from "axios";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -81,10 +82,13 @@ export default function CheckoutPage() {
           router.push("/allorders");
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
+      const message = axios.isAxiosError<{ message?: string }>(err)
+        ? err.response?.data?.message
+        : undefined;
       setErrorMessage(
-        err.response?.data?.message || "Something went wrong. Please try again."
+        message || "Something went wrong. Please try again."
       );
     } finally {
       setLoading(false);

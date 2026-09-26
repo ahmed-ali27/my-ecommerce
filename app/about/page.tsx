@@ -93,7 +93,7 @@ function About() {
               NOVA started with a simple idea: make great products<br></br>{" "}
               accessible to everyone. We bring together top brands<br></br> and
               everyday essentials in one converuent place, with a <br></br>
-              shopping expervence that's easy, reliable, and made for you.
+              shopping expervence that&apos;s easy, reliable, and made for you.
             </p>
           </div>
           <div className="flex items-center">

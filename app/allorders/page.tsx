@@ -7,6 +7,29 @@ import Cookies from "js-cookie";
 import { Package, CheckCircle2, Clock, CreditCard, Banknote, ArrowRight, Loader2 } from "lucide-react";
 import api from "@/Api/api";
 
+type OrderProduct = {
+  imageCover: string;
+  title: string;
+};
+
+type OrderItem = {
+  _id: string;
+  product: OrderProduct;
+  count: number;
+  price: number;
+};
+
+type Order = {
+  _id?: string;
+  id?: string;
+  createdAt: string;
+  paymentMethodType?: string;
+  isPaid?: boolean;
+  isDelivered?: boolean;
+  cartItems?: OrderItem[];
+  totalOrderPrice: number;
+};
+
 // 🛠️ دالة بسيطة لاستخراج userId من الـ JWT Token من غير مكتبات خارجية
 function getUserIdFromToken(token: string): string | null {
   try {
@@ -18,14 +41,15 @@ function getUserIdFromToken(token: string): string | null {
         .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
         .join("")
     );
-    return JSON.parse(jsonPayload).id;
-  } catch (err) {
+    const payload = JSON.parse(jsonPayload) as { id?: string };
+    return payload.id || null;
+  } catch {
     return null;
   }
 }
 
 export default function AllOrdersPage() {
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   // جلب كل الطلبات الخاصة بالمستخدم
@@ -45,7 +69,7 @@ export default function AllOrdersPage() {
     }
 
     try {
-      const res = await api.get(`/orders/user/${userId}`);
+      const res = await api.get<Order[]>(`/orders/user/${userId}`);
       setOrders(res.data);
     } catch (err) {
       console.error("Error fetching orders:", err);
@@ -55,6 +79,8 @@ export default function AllOrdersPage() {
   };
 
   useEffect(() => {
+    // تتم قراءة الرمز من ملف الارتباط عند فتح الصفحة لتحديد إن كان يلزم إرسال الطلب
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     getUserOrders();
   }, []);
 
@@ -91,7 +117,7 @@ export default function AllOrdersPage() {
             </div>
             <h2 className="text-xl font-bold text-[#2d4735] mb-2">No Orders Found</h2>
             <p className="text-gray-500 text-sm mb-6">
-              You haven't placed any orders yet. Start shopping now!
+              You haven&apos;t placed any orders yet. Start shopping now!
             </p>
             <Link
               href="/shop"
@@ -171,7 +197,7 @@ export default function AllOrdersPage() {
 
                 {/* قائمة منتجات هذا الطلب */}
                 <div className="p-4 sm:p-5 divide-y divide-[#E0DED4]">
-                  {order.cartItems?.map((item: any) => (
+                  {order.cartItems?.map((item) => (
                     <div
                       key={item._id}
                       className="py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-4"

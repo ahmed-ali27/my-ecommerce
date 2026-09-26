@@ -18,7 +18,6 @@ import { useFormik, FormikHelpers } from "formik";
 import * as Yup from "yup";
 import emailjs from "@emailjs/browser";
 import toast from "react-hot-toast";
-import { useState } from "react";
 
 type ContactFormValues = {
   name: string;
@@ -49,15 +48,11 @@ const schema = Yup.object({
 });
 
 function Contact() {
-  const [loading, setLoading] = useState(false);
-
   // Email Submit Function
   async function handleFormSubmit(
     values: ContactFormValues,
     actions: FormikHelpers<ContactFormValues>
   ) {
-    setLoading(true);
-
     const toastId = toast.loading("Sending message...");
 
     try {
@@ -92,9 +87,6 @@ function Contact() {
     id: toastId,
   });
 }
-     finally {
-      setLoading(false);
-    }
   }
 
   // Formik
@@ -305,7 +297,7 @@ function Contact() {
               </h2>
 
               <p className="text-xs text-gray-600 mb-3">
-                We're happy to help you anytime via email.
+                We&apos;re happy to help you anytime via email.
               </p>
             </div>
 

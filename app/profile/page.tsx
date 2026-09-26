@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import api from "@/Api/api";
+import axios from "axios";
 import {
   User,
   Key,
@@ -58,11 +59,17 @@ export default function Profile() {
         if (response.data.message === "success") {
           setDataSuccess("Profile information updated successfully!");
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const data = axios.isAxiosError<{
+          message?: string;
+          errors?: { param?: string; msg?: string };
+        }>(err)
+          ? err.response?.data
+          : undefined;
         setDataError(
-          err.response?.data?.errors?.param
-            ? `${err.response.data.errors.param}: ${err.response.data.errors.msg}`
-            : err.response?.data?.message || "Failed to update profile data"
+          data?.errors?.param
+            ? `${data.errors.param}: ${data.errors.msg}`
+            : data?.message || "Failed to update profile data"
         );
       } finally {
         setDataLoading(false);
@@ -99,9 +106,12 @@ export default function Profile() {
           setPassSuccess("Password changed successfully!");
           passFormik.resetForm();
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const message = axios.isAxiosError<{ message?: string }>(err)
+          ? err.response?.data?.message
+          : undefined;
         setPassError(
-          err.response?.data?.message || "Failed to change password. Please verify current password."
+          message || "Failed to change password. Please verify current password."
         );
       } finally {
         setPassLoading(false);

@@ -28,6 +28,10 @@ type productsDetails = {
   subcategory?: { _id: string; name: string }[];
 };
 
+type ProductsApiResponse = {
+  data: productsDetails[];
+};
+
 function ShopContent() {
   const [allProducts, setAllProducts] = useState<productsDetails[]>();
 
@@ -45,7 +49,7 @@ function ShopContent() {
   const brandId = searchParams.get("brand");
   const searchQuery = searchParams.get("search") || "";
 
-  function getAllProducts() {
+  useEffect(() => {
     let endpoint = "/products";
     if (categoryId) {
       endpoint = `/products?category=${categoryId}`;
@@ -53,18 +57,15 @@ function ShopContent() {
       endpoint = `/products?brand=${brandId}`;
     }
 
+    // يعاد الجلب فقط عند تغيّر مرشّح التصنيف أو العلامة التجارية في الرابط
     api
-      .get(endpoint)
+      .get<ProductsApiResponse>(endpoint)
       .then((res) => {
         setAllProducts(res.data.data);
       })
       .catch((err) => {
         console.log(err);
       });
-  }
-
-  useEffect(() => {
-    getAllProducts();
   }, [categoryId, brandId]);
 
   // فلترة المنتجات بناءً على كلمة البحث
